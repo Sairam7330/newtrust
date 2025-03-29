@@ -1,8 +1,5 @@
 streamlit
-pandas
 numpy
+pandas
+tensorflow
 scikit-learn
-shap
-matplotlib
-joblib
-gdown
