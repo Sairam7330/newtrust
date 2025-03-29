@@ -4,10 +4,14 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import StandardScaler
+import pickle
 
 # Load the trained model
 model = load_model("credit_default_ann.h5")
-scaler = StandardScaler()
+
+# Load the pre-fitted scaler
+with open("scaler.pkl", "rb") as scaler_file:
+    scaler = pickle.load(scaler_file)
 
 # Define all 23 input features
 features = ["LIMIT_BAL", "PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6", "BILL_AMT1", "BILL_AMT2", "BILL_AMT3", "BILL_AMT4", "BILL_AMT5", "BILL_AMT6", "PAY_AMT1", "PAY_AMT2", "PAY_AMT3", "PAY_AMT4", "PAY_AMT5", "PAY_AMT6"]
@@ -20,7 +24,7 @@ def preprocess_input(data):
     avg_pay_delay = np.mean(valid_pay_delays) if valid_pay_delays else 0
     avg_bill_diff = np.mean(valid_bill_diffs) if valid_bill_diffs else 0
     
-    processed_data = scaler.transform([[data[f] for f in ["LIMIT_BAL", "PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"]]] + [[avg_pay_delay, avg_bill_diff]])
+    processed_data = scaler.transform([[data[f] for f in ["LIMIT_BAL", "PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"]] + [avg_pay_delay, avg_bill_diff]])
     return processed_data
 
 def predict_single(input_data):
