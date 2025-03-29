@@ -17,10 +17,10 @@ def preprocess_input(data):
     valid_pay_delays = [data[f'PAY_{i}'] for i in [0, 2, 3, 4, 5, 6] if data[f'BILL_AMT{i//2+1}'] != 0 or data[f'PAY_AMT{i//2+1}'] != 0]
     valid_bill_diffs = [data[f'BILL_AMT{i+1}'] - data[f'PAY_AMT{i+1}'] for i in range(6) if data[f'BILL_AMT{i+1}'] != 0 or data[f'PAY_AMT{i+1}'] != 0]
     
-    data['AVG_PAY_DELAY'] = np.mean(valid_pay_delays) if valid_pay_delays else 0
-    data['AVG_BILL_DIFF'] = np.mean(valid_bill_diffs) if valid_bill_diffs else 0
+    avg_pay_delay = np.mean(valid_pay_delays) if valid_pay_delays else 0
+    avg_bill_diff = np.mean(valid_bill_diffs) if valid_bill_diffs else 0
     
-    processed_data = scaler.transform([[data[f] for f in ["LIMIT_BAL", "AVG_PAY_DELAY", "AVG_BILL_DIFF", "PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"]]])
+    processed_data = scaler.transform([[data[f] for f in ["LIMIT_BAL", "PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"]]] + [[avg_pay_delay, avg_bill_diff]])
     return processed_data
 
 def predict_single(input_data):
@@ -35,7 +35,7 @@ def predict_batch(uploaded_file):
     df['AVG_PAY_DELAY'] = df.apply(lambda row: np.mean([row[f'PAY_{i}'] for i in [0, 2, 3, 4, 5, 6] if row[f'BILL_AMT{i//2+1}'] != 0 or row[f'PAY_AMT{i//2+1}'] != 0]), axis=1)
     df['AVG_BILL_DIFF'] = df.apply(lambda row: np.mean([row[f'BILL_AMT{i+1}'] - row[f'PAY_AMT{i+1}'] for i in range(6) if row[f'BILL_AMT{i+1}'] != 0 or row[f'PAY_AMT{i+1}'] != 0]), axis=1)
     
-    df_processed = scaler.transform(df[["LIMIT_BAL", "AVG_PAY_DELAY", "AVG_BILL_DIFF", "PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"]])
+    df_processed = scaler.transform(df[["LIMIT_BAL", "PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6", "AVG_PAY_DELAY", "AVG_BILL_DIFF"]])
     predictions = model.predict(df_processed)
     df['Default Probability'] = predictions
     df['Prediction'] = df['Default Probability'].apply(lambda x: "Default" if x > 0.5 else "No Default")
@@ -59,6 +59,7 @@ if st.button("Predict Single Case"):
 st.header("Batch Prediction from CSV")
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 if uploaded_file:
-    predictions_df = predict_batch(uploaded_file)
-    st.write(predictions_df)
-    st.download_button("Download Predictions", predictions_df.to_csv(index=False), "predictions.csv", "text/csv")
+    if st.button("Predict Batch Cases"):
+        predictions_df = predict_batch(uploaded_file)
+        st.write(predictions_df)
+        st.download_button("Download Predictions", predictions_df.to_csv(index=False), "predictions.csv", "text/csv")
